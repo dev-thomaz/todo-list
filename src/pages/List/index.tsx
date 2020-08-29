@@ -1,6 +1,6 @@
-import React, { useState, useEffect, FormEvent } from 'react';
+import React, { useState, useEffect, FormEvent, } from 'react';
 
-import { Button, Table, TableBody, TableCell, TableRow, Paper, TableContainer } from '@material-ui/core'
+import { Button, Table, TableBody, TableCell, TableRow} from '@material-ui/core'
 import CheckBoxOutlineBlankIcon from '@material-ui/icons/CheckBoxOutlineBlank';
 import CheckBoxIcon from '@material-ui/icons/CheckBox';
 import DeleteIcon from '@material-ui/icons/Delete';
@@ -19,8 +19,35 @@ interface Task {
 const List: React.FC = () => {
     const [newTask, setNewTask] = useState('')
     const [editTask, setEditTask] = useState('')
-    const [toDoList, settoDoList] = useState<Task[]>([])
-    const [doneList, setDoneList] = useState<Task[]>([])
+    const [toDoList, settoDoList] = useState<Task[]>(() => {
+        const storagedTodoList = localStorage.getItem('@TodoList:todotasks')
+
+        if (storagedTodoList) {
+            return JSON.parse(storagedTodoList)
+        } else {
+            return []
+        }
+
+    })
+    const [doneList, setDoneList] = useState<Task[]>(() => {
+        const storagedDoneList = localStorage.getItem('@TodoList:donetasks')
+
+        if (storagedDoneList) {
+            return JSON.parse(storagedDoneList)
+        } else {
+            return []
+        }
+
+    })
+
+
+    useEffect(() => {
+        localStorage.setItem('@TodoList:todotasks', JSON.stringify(toDoList))
+
+    }, [toDoList])
+    useEffect(() => {
+        localStorage.setItem('@TodoList:donetasks', JSON.stringify(doneList))
+    }, [doneList])
 
     function handleAddTask(event: FormEvent<HTMLFormElement>): void {
         event.preventDefault()
@@ -32,34 +59,68 @@ const List: React.FC = () => {
         setNewTask('')
     }
 
-    function handleEditTask(i: number): void {
+    async function handleEditTask(i: number) {
 
         let tasks = toDoList
         tasks.map((item, index) => {
-            if (i == index) {
+            if (i === index) {
                 item.title = editTask
+                console.log(editTask);
+                
             }
+            return null
         })
         setEditTask('')
-        settoDoList(tasks)
+        console.log(tasks);
+        
+        settoDoList(tasks.filter((item, index) => index === i || index !== i))
     }
 
     function turnEditable(i: number) {
         let tasks = toDoList
         tasks.map((item, index) => {
-            if (i == index) {
+            if (i === index) {
                 item.edit = true
                 setEditTask(item.title)
             }
+            return null
         })
         settoDoList(tasks)
     }
 
-    function handleDoneTask(task: Task, i: number){
-        let tasks = toDoList
-        tasks.splice(i, 1)
-        setDoneList([...doneList, task])
+    async function handleMoveTask(task: Task, i: number, origin: string) {
+        if (origin === 'todo') {
+            let toDo = toDoList
+
+            settoDoList(toDo.filter((item, index) => index !== i))
+            toDo.splice(i, 1)
+
+            setDoneList([...doneList, task])
+        } else if (origin === 'done') {
+            let done = doneList
+
+            setDoneList(done.filter((item, index) => index !== i))
+            done.splice(i, 1)
+
+            settoDoList([...toDoList, task])
+        }
+
     }
+
+    async function handleDeleteTask(i: number, origin: string) {
+        if (origin === 'todo') {
+            let toDo = toDoList
+
+            settoDoList(toDo.filter((item, index) => index !== i))
+            toDo.splice(i, 1)
+
+        } else if (origin === 'done') {
+            let done = doneList
+            setDoneList(done.filter((item, index) => index !== i))
+            done.splice(i, 1)
+        }
+    }
+
 
     return (
         <Container>
@@ -77,14 +138,14 @@ const List: React.FC = () => {
                 </Form>
                 <ListArea>
                     <span>A FAZER</span>
-                    <Table >
-                        <TableBody>
-                            <ListRowArea>
+                    <ListRowArea>
+                        <Table >
+                            <TableBody>
                                 {toDoList.map((item, index) => {
                                     let task = item
                                     return (
                                         <TableRow key={index}>
-                                            <TableCell><CheckBoxOutlineBlankIcon onClick={() => handleDoneTask(task, index)} color="disabled" /></TableCell>
+                                            <TableCell><CheckBoxOutlineBlankIcon onClick={() => handleMoveTask(task, index, 'todo')} color="disabled" /></TableCell>
                                             <TableCell align="center">
                                                 {task.edit ? <input className="edit" type="text" autoFocus onChange={(e => setEditTask(e.target.value))} />
                                                     : <p>{item.title}</p>
@@ -103,37 +164,40 @@ const List: React.FC = () => {
                                                         : <EditIcon onClick={() => turnEditable(index)} />
                                                     }
 
-                                                    <DeleteIcon />
+                                                    <DeleteIcon onClick={() => handleDeleteTask(index, 'todo')} />
                                                 </BtnActionArea>
                                             </TableCell>
                                         </TableRow>
                                     )
                                 })}
 
-                            </ListRowArea>
-                        </TableBody>
-                    </Table>
+                            </TableBody>
+                        </Table>
+                    </ListRowArea>
                 </ListArea>
                 <ListArea>
                     <span>FEITO</span>
-                    <Table>
-                        <TableBody>
-                            <ListRowArea>
+                    <ListRowArea>
+                        <Table>
+                            <TableBody>
                                 {doneList.map((item, index) => (
                                     <TableRow key={index}>
-                                        <TableCell><CheckBoxIcon color="disabled" /></TableCell>
-                                        
+                                        <TableCell><CheckBoxIcon color="disabled" onClick={() => handleMoveTask(item, index, 'done')} /></TableCell>
+                                        <TableCell align="center">
+
+                                            <p>{item.title}</p>
+                                        </TableCell>
                                         <TableCell>
                                             <BtnActionArea>
-                                                <DeleteIcon />
+                                                <DeleteIcon onClick={() => { handleDeleteTask(index, 'done') }} />
                                             </BtnActionArea>
                                         </TableCell>
                                     </TableRow>
                                 ))}
 
-                            </ListRowArea>
-                        </TableBody>
-                    </Table>
+                            </TableBody>
+                        </Table>
+                    </ListRowArea>
                 </ListArea>
             </Content>
         </Container>

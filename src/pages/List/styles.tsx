@@ -45,7 +45,7 @@ color:white;
 export const Content = styled.div` 
 background: #F5F5F5;
 padding:10px 10px;
-height:calc(100vh - 80px);
+height:calc(100vh - 60px);
 span{
     color:#006A6A;
     font: 16px Noto Sans JP, sans-serif;
@@ -81,7 +81,7 @@ input{
 
 export const ListArea = styled.div`
 padding: 10px 0;
-
+height:'50%';
 `;
 
 
@@ -102,6 +102,14 @@ max-height:12em;
 overflow-y: scroll; 
 overflow-x: hidden;
 
+input{
+   width:100%;
+   border:0;
+   padding:0 5px;
+   border-radius: 5px;
+   height: 25px;
+
+}
 
 .MuiTableCell-alignCenter{
     width: 100%;
